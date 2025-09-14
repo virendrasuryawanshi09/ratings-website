@@ -11,9 +11,12 @@ const pool = mysql.createPool({
   acquireTimeout: 60000,
   timeout: 60000,
   reconnect: true,
-  multipleStatements: false
+  multipleStatements: false,
+  // Add TLS support for SkySQL
+  ssl: {
+    rejectUnauthorized: true
+  }
 });
-
 
 const testConnection = async () => {
   try {
