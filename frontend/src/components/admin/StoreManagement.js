@@ -16,17 +16,14 @@ const AddStoreModal = ({ isOpen, onClose, onStoreAdded }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const storeData = {
         ...formData,
         owner_id: formData.owner_id ? parseInt(formData.owner_id) : null
       };
-      
-      console.log('Creating store with data:', storeData);
+
       const response = await adminAPI.createStore(storeData);
-      console.log('Store created successfully:', response);
-      
       onStoreAdded();
       onClose();
       setFormData({
@@ -36,7 +33,6 @@ const AddStoreModal = ({ isOpen, onClose, onStoreAdded }) => {
         owner_id: ''
       });
     } catch (error) {
-      console.error('Failed to create store:', error);
       setError(error.response?.data?.error || error.message || 'Failed to create store');
     } finally {
       setLoading(false);
@@ -77,7 +73,7 @@ const AddStoreModal = ({ isOpen, onClose, onStoreAdded }) => {
                 {error}
               </div>
             )}
-            
+
             <div className="form-group">
               <label htmlFor="storeName" className="form-label">Store Name</label>
               <input
@@ -178,7 +174,7 @@ const AddStoreModal = ({ isOpen, onClose, onStoreAdded }) => {
 
 const StoreManagement = () => {
   const [stores, setStores] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // keep inline loading row, not full-page return
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     name: '',
@@ -186,68 +182,43 @@ const StoreManagement = () => {
     address: '',
     sort: 'name:asc'
   });
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Debug state changes
+  // Debounce filter changes (300ms)
   useEffect(() => {
-    console.log('Stores state changed:', {
-      stores,
-      type: typeof stores,
-      isArray: Array.isArray(stores),
-      length: stores?.length
-    });
-  }, [stores]);
-
-  useEffect(() => {
-    fetchStores();
+    const t = setTimeout(() => setDebouncedFilters(filters), 300);
+    return () => clearTimeout(t);
   }, [filters]);
 
-  const fetchStores = async () => {
+  // Fetch when debounced filters change
+  useEffect(() => {
+    fetchStores(debouncedFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedFilters]);
+
+  const fetchStores = async (activeFilters = filters) => {
     try {
       setLoading(true);
       setError('');
-      
-      console.log('🔍 Fetching stores with filters:', filters);
-      const response = await adminAPI.getStores(filters);
-      
-      // Comprehensive debugging
-      console.log('Full Stores API Response:', response);
-      console.log('Response.data:', response.data);
-      console.log('Type of response.data:', typeof response.data);
-      console.log('Is Array?', Array.isArray(response.data));
-      console.log('Length:', response.data?.length);
+      const response = await adminAPI.getStores(activeFilters);
 
-      // Handle different response structures
       let storeData = [];
-      
       if (Array.isArray(response.data)) {
         storeData = response.data;
       } else if (response.data && Array.isArray(response.data.stores)) {
-        console.log('Found stores in response.data.stores');
         storeData = response.data.stores;
       } else if (response.data && Array.isArray(response.data.data)) {
-        console.log('Found stores in response.data.data');
         storeData = response.data.data;
       } else if (response && Array.isArray(response)) {
-        console.log('Response itself is array');
         storeData = response;
       } else {
-        console.warn('⚠️ Unexpected stores API response structure:', response.data);
+        console.warn('⚠️ Unexpected stores API response structure:', response?.data);
         storeData = [];
       }
 
-      console.log('Final store data to set:', storeData);
       setStores(storeData);
-      
     } catch (error) {
-      console.error('Failed to fetch stores:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        status: error.response?.status,
-        data: error.response?.data
-      });
-      
       setError(error.response?.data?.error || error.message || 'Failed to fetch stores');
       setStores([]); // Always fallback to empty array
     } finally {
@@ -256,7 +227,6 @@ const StoreManagement = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    console.log(`Filter changed: ${key} = ${value}`);
     setFilters(prev => ({
       ...prev,
       [key]: value
@@ -264,7 +234,6 @@ const StoreManagement = () => {
   };
 
   const clearFilters = () => {
-    console.log('Clearing all filters');
     setFilters({
       name: '',
       email: '',
@@ -272,72 +241,6 @@ const StoreManagement = () => {
       sort: 'name:asc'
     });
   };
-
-  // Debug component render
-  console.log('StoreManagement render:', {
-    loading,
-    storesCount: stores?.length,
-    error,
-    storesType: typeof stores,
-    isStoresArray: Array.isArray(stores)
-  });
-
-  // Handle loading state
-  if (loading && stores.length === 0) {
-    return (
-      <div className="store-management">
-        <div className="management-header">
-          <div className="header-content">
-            <h2 className="page-title">Store Management</h2>
-            <p className="page-subtitle">Loading stores...</p>
-          </div>
-        </div>
-        <div className="table-section">
-          <div className="table-loading" style={{ padding: '2rem', textAlign: 'center' }}>
-            <span className="loading-spinner"></span>
-            <p>Loading stores...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle error state
-  if (error && stores.length === 0) {
-    return (
-      <div className="store-management">
-        <div className="management-header">
-          <div className="header-content">
-            <h2 className="page-title">Store Management</h2>
-            <p className="page-subtitle">Error loading stores</p>
-          </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn btn-primary btn-add"
-          >
-            <span className="btn-icon">+</span>
-            Add New Store
-          </button>
-        </div>
-        
-        <div className="error-section" style={{ padding: '2rem', textAlign: 'center' }}>
-          <div className="error-message" style={{ display: 'block', margin: '1rem auto', maxWidth: '500px' }}>
-            <span className="error-icon">⚠️</span>
-            <p>{error}</p>
-            <button onClick={fetchStores} className="btn btn-primary" style={{ marginTop: '1rem' }}>
-              Retry Loading Stores
-            </button>
-          </div>
-        </div>
-        
-        <AddStoreModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onStoreAdded={fetchStores}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="store-management">
@@ -450,7 +353,7 @@ const StoreManagement = () => {
                       <span className="empty-icon">⚠️</span>
                       <p>Invalid data format received</p>
                       <p>Expected array, got: {typeof stores}</p>
-                      <button onClick={fetchStores} className="btn btn-primary btn-sm">
+                      <button onClick={() => fetchStores(debouncedFilters)} className="btn btn-primary btn-sm">
                         Retry
                       </button>
                     </div>
@@ -475,7 +378,7 @@ const StoreManagement = () => {
                     console.warn('⚠️ Invalid store object at index', index, ':', store);
                     return null;
                   }
-                  
+
                   return (
                     <tr key={store.id || index}>
                       <td className="name-cell">
@@ -515,7 +418,7 @@ const StoreManagement = () => {
       <AddStoreModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onStoreAdded={fetchStores}
+        onStoreAdded={() => fetchStores(debouncedFilters)}
       />
     </div>
   );

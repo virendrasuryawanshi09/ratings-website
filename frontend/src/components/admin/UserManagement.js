@@ -17,7 +17,6 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
     try {
       const response = await adminAPI.createUser(formData);
       onUserAdded();
@@ -268,7 +267,7 @@ const UserDetailsModal = ({ isOpen, onClose, user }) => {
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // no full-page early return
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     name: '',
@@ -277,29 +276,28 @@ const UserManagement = () => {
     role: '',
     sort: 'name:asc'
   });
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+  // Debounce filter changes (300ms)
   useEffect(() => {
-    console.log('👥 Users state changed:', {
-      users,
-      type: typeof users,
-      isArray: Array.isArray(users),
-      length: users?.length
-    });
-  }, [users]);
-
-  useEffect(() => {
-    fetchUsers();
+    const t = setTimeout(() => setDebouncedFilters(filters), 300);
+    return () => clearTimeout(t);
   }, [filters]);
 
-  const fetchUsers = async () => {
+  // Fetch when debounced filters change
+  useEffect(() => {
+    fetchUsers(debouncedFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedFilters]);
+
+  const fetchUsers = async (activeFilters = filters) => {
     try {
       setLoading(true);
       setError('');
-
-      const response = await adminAPI.getUsers(filters);
+      const response = await adminAPI.getUsers(activeFilters);
 
       let userData = [];
       if (Array.isArray(response.data)) {
@@ -311,10 +309,9 @@ const UserManagement = () => {
       } else if (response && Array.isArray(response)) {
         userData = response;
       } else {
-        console.warn('Unexpected API response structure:', response.data);
+        console.warn('Unexpected API response structure:', response?.data);
         userData = [];
       }
-
       setUsers(userData);
     } catch (error) {
       setError(error.response?.data?.error || error.message || 'Failed to fetch users');
@@ -353,61 +350,6 @@ const UserManagement = () => {
       sort: 'name:asc'
     });
   };
-
-  if (loading && users.length === 0) {
-    return (
-      <div className="user-management">
-        <div className="management-header">
-          <div className="header-content">
-            <h2 className="page-title">User Management</h2>
-            <p className="page-subtitle">Loading users...</p>
-          </div>
-        </div>
-        <div className="table-section">
-          <div className="table-loading" style={{ padding: '2rem', textAlign: 'center' }}>
-            <span className="loading-spinner-small"></span>
-            <p>Loading users...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && users.length === 0) {
-    return (
-      <div className="user-management">
-        <div className="management-header">
-          <div className="header-content">
-            <h2 className="page-title">User Management</h2>
-            <p className="page-subtitle">Error loading users</p>
-          </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn btn-primary btn-add"
-          >
-            <span className="btn-icon">+</span>
-            Add New User
-          </button>
-        </div>
-
-        <div className="error-section" style={{ padding: '2rem', textAlign: 'center' }}>
-          <div className="error-message" style={{ display: 'block', margin: '1rem auto', maxWidth: '500px' }}>
-            <span className="error-icon">⚠️</span>
-            <p>{error}</p>
-            <button onClick={fetchUsers} className="btn btn-primary" style={{ marginTop: '1rem' }}>
-              Retry Loading Users
-            </button>
-          </div>
-        </div>
-
-        <AddUserModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onUserAdded={fetchUsers}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="user-management">
@@ -530,7 +472,7 @@ const UserManagement = () => {
                       <span className="empty-icon">⚠️</span>
                       <p>Invalid data format received</p>
                       <p>Expected array, got: {typeof users}</p>
-                      <button onClick={fetchUsers} className="btn btn-primary btn-sm">
+                      <button onClick={() => fetchUsers(debouncedFilters)} className="btn btn-primary btn-sm">
                         Retry
                       </button>
                     </div>
@@ -555,7 +497,6 @@ const UserManagement = () => {
                     console.warn('⚠️ Invalid user object at index', index, ':', user);
                     return null;
                   }
-
                   return (
                     <tr key={user.id || index}>
                       <td className="name-cell">
@@ -595,7 +536,7 @@ const UserManagement = () => {
       <AddUserModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onUserAdded={fetchUsers}
+        onUserAdded={() => fetchUsers(debouncedFilters)}
       />
 
       <UserDetailsModal
