@@ -14,7 +14,7 @@ const pool = mysql.createPool({
   multipleStatements: false,
   // ADD THIS FOR SKYSQL
   ssl: {
-    rejectUnauthorized: false  // Try this first, then switch to true
+    rejectUnauthorized: true  // Try this first, then switch to true
   }
 });
 
