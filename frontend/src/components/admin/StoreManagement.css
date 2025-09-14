@@ -1,0 +1,143 @@
+/* StoreManagement.css - Extends UserManagement styles with store-specific additions */
+
+@import './UserManagement.css';
+
+/* Override table settings for 4-column store layout */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  table-layout: fixed;
+  min-width: 800px; 
+}
+
+/* 4-Column Layout: Name, Email, Address, Rating */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) { 
+  width: 25%; 
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) { 
+  width: 30%; 
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) { 
+  width: 30%; 
+}
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) { 
+  width: 15%;
+}
+
+/* Store-specific content styling */
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.rating-value {
+  font-weight: 600;
+  color: #f59e0b;
+  min-width: 2rem;
+}
+
+.rating-stars {
+  font-size: 0.875rem;
+  line-height: 1;
+  color: #fbbf24;
+}
+
+/* Store name cell styling */
+.store-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.store-name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.store-subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Enhanced form styling for store creation */
+.form-help {
+  display: block;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.375rem;
+  font-style: italic;
+}
+
+/* Loading spinner for store creation */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+/* Store table specific responsive adjustments */
+@media (max-width: 768px) {
+  .data-table {
+    min-width: 600px; 
+  }
+  
+  .rating-display {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  /* Mobile column adjustments */
+  .data-table th:nth-child(1),
+  .data-table td:nth-child(1) { 
+    width: 25%; 
+  }
+  
+  .data-table th:nth-child(2),
+  .data-table td:nth-child(2) { 
+    width: 35%; 
+  }
+  
+  .data-table th:nth-child(3),
+  .data-table td:nth-child(3) { 
+    width: 25%;
+  }
+  
+  .data-table th:nth-child(4),
+  .data-table td:nth-child(4) { 
+    width: 15%;
+  }
+}
+
+@media (max-width: 480px) {
+  .data-table {
+    min-width: 500px;
+  }
+  
+  .store-info {
+    gap: 0.125rem;
+  }
+  
+  .rating-stars {
+    font-size: 0.75rem;
+  }
+  
+  .rating-value {
+    font-size: 0.8rem;
+  }
+}
