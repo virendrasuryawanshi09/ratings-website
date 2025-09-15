@@ -1,35 +1,26 @@
 const mysql = require('mysql2/promise');
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
-  database: process.env.DB_NAME || 'ratings_app',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true,
-  multipleStatements: false,
-  // ADD THIS FOR SKYSQL
-  ssl: {
-    rejectUnauthorized: false // Try this first, then switch to true
-  }
+  // Remove these invalid options causing warnings:
+  // acquireTimeout, timeout, reconnect
 });
 
-
-const testConnection = async () => {
-  try {
-    const connection = await pool.getConnection();
-    console.log('Database connected successfully');
+// Test connection
+pool.getConnection()
+  .then(connection => {
+    console.log('✅ Database connected successfully');
     connection.release();
-  } catch (err) {
-    console.error('Database connection failed:', err);
-    process.exit(1);
-  }
-};
-
-testConnection();
+  })
+  .catch(err => {
+    console.error('❌ Database connection failed:', err);
+  });
 
 module.exports = pool;
