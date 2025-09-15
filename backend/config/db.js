@@ -12,10 +12,6 @@ const pool = mysql.createPool({
   timeout: 60000,
   reconnect: true,
   multipleStatements: false,
-  // ADD THIS FOR SKYSQL
-  ssl: {
-    rejectUnauthorized: false 
-  }
 });
 
 
